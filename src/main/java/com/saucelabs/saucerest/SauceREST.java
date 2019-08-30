@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +59,7 @@ public class SauceREST implements Serializable {
     /**
      * 10 seconds in milliseconds.
      */
-    private static final long HTTP_CONNECT_TIMEOUT_SECONDS = TimeUnit.SECONDS.toMillis(10);
+    private static final long HTTP_CONNECT_TIMEOUT_SECONDS = TimeUnit.SECONDS.toMillis(10);   
     /**
      * The username to use when performing HTTP requests to the Sauce REST API.
      */
@@ -88,7 +89,8 @@ public class SauceREST implements Serializable {
      */
     public SauceREST(String username, String accessKey) {
         this(username, accessKey, US);
-    }
+		System.out.println("}}}]]]===---TC Version---===[[[{{{");
+   }
 
     /**
      * Constructs a new instance of the SauceREST class, matching the datacenter string to datacenter object
@@ -318,6 +320,7 @@ public class SauceREST implements Serializable {
      * @param jobId    the Sauce Job Id, typically equal to the Selenium/WebDriver sessionId
      * @param location represents the base directory where the video should be downloaded to
      */
+    @Deprecated
     public void downloadVideo(String jobId, String location) {
         URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/video.mp4");
         saveFile(jobId, location, restEndpoint);
@@ -332,7 +335,7 @@ public class SauceREST implements Serializable {
      * @return A BufferedInputStream containing the video info
      * @throws IOException if there is a problem fetching the datt
      */
-
+    @Deprecated
     public BufferedInputStream downloadVideo(String jobId) throws IOException {
         URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/video.mp4");
         return downloadFileData(jobId, restEndpoint);
@@ -345,7 +348,8 @@ public class SauceREST implements Serializable {
      * @param jobId    the Sauce Job Id, typically equal to the Selenium/WebDriver sessionId
      * @param location represents the base directory where the video should be downloaded to
      */
-    public void downloadLog(String jobId, String location) {
+   @Deprecated
+   public void downloadLog(String jobId, String location) {
         URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/selenium-server.log");
         saveFile(jobId, location, restEndpoint);
     }
@@ -357,10 +361,51 @@ public class SauceREST implements Serializable {
      * @return a BufferedInputStream containing the logfile
      * @throws IOException if there is a problem fetching the file
      */
+    @Deprecated
     public BufferedInputStream downloadLog(String jobId) throws IOException {
         URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/selenium-server.log");
         return downloadFileData(jobId, restEndpoint);
     }
+    
+    /**
+     * Downloads all AssetType files for a Sauce Job to the filesystem.  The files will be stored in a
+     * directory specified by the <code>location</code> field.
+     *
+     * @param jobId		the Sauce Job Id, typically equal to the Selenium/WebDriver sessionId
+     * @param location 	represents the base directory where the video should be downloaded to
+     */
+    public void downloadAssets(String jobId, String location) {
+		for (AssetType assetType : AssetType.values()) {
+			downloadAsset(assetType, jobId, location);
+		}
+    }
+
+    /**
+     * Downloads the specfied asset file for a Sauce Job to the filesystem.  The file will be stored in a
+     * directory specified by the <code>location</code> field.
+     *
+     * @param assetType	the asset to download, 
+     * @param jobId		the Sauce Job Id, typically equal to the Selenium/WebDriver sessionId
+     * @param location 	represents the base directory where the video should be downloaded to
+     */
+    public void downloadAsset(AssetType assetType, String jobId, String location) {
+        URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/" 
+        		+ assetType.getName() + "."+ assetType.getExtension());
+        saveFile(assetType.getName()+"_"+jobId+"_", location, restEndpoint);
+    }
+    
+    /**
+     * Downloads the specfied asset file for a Sauce Job and returns it.
+     *
+     * @param jobId the Sauce Job Id, typically equal to the Selenium/WebDriver sessionId
+     * @return a BufferedInputStream containing the logfile
+     * @throws IOException if there is a problem fetching the file
+     */
+    public BufferedInputStream downloadAsset(AssetType assetType, String jobId) throws IOException {
+        URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/" 
+        		+ assetType.getName() + "." + assetType.getExtension());
+        return downloadFileData(jobId, restEndpoint);
+    }  
 
     /**
      * Downloads the HAR file for a Sauce Job to the filesystem.  The file will be stored in a
@@ -372,6 +417,7 @@ public class SauceREST implements Serializable {
      * @param jobId    the Sauce Job Id, typically equal to the Selenium/WebDriver sessionId
      * @param location represents the base directory where the HAR file should be downloaded to
      */
+    @Deprecated
     public void downloadHAR(String jobId, String location) {
         URL restEndpoint = this.buildEDSURL(jobId + "/network.har");
         saveFile(jobId, location, restEndpoint);
@@ -387,6 +433,7 @@ public class SauceREST implements Serializable {
      * @return A BufferedInputStream containing the HAR data, unparsed
      * @throws IOException if there is a problem fetching the HAR file
      */
+    @Deprecated
     public BufferedInputStream getHARDataStream(String jobId) throws IOException {
         logger.log(Level.FINEST, "getHARDataStream for " + jobId);
         URL restEndpoint = this.buildURL("v1/" + username + "/jobs/" + jobId + "/assets/network.har");
@@ -578,6 +625,10 @@ public class SauceREST implements Serializable {
             String saveName = jobId + format.format(new Date());
             if (restEndpoint.getPath().endsWith(".mp4")) {
                 saveName = saveName + ".mp4";
+            } else if (restEndpoint.getPath().endsWith(".json")) {
+                saveName = saveName + ".json";
+            } else if (restEndpoint.getPath().endsWith(".har")) {
+                saveName = saveName + ".har";
             } else {
                 saveName = saveName + ".log";
             }
@@ -591,9 +642,11 @@ public class SauceREST implements Serializable {
                 }
                 out.flush();
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Error downloading Sauce Results", e);
-        }
+        } catch (FileNotFoundException e) {
+            logger.log(Level.WARNING, "Asset not found at "+restEndpoint);
+	    } catch (IOException e) {
+	        logger.log(Level.SEVERE, "Error downloading Sauce Results", e);
+	    }
     }
 
     /**
@@ -1034,4 +1087,5 @@ public class SauceREST implements Serializable {
             Objects.equals(sauceobj.accessKey, this.accessKey) &&
             Objects.equals(sauceobj.server, this.server);
     }
+
 }
