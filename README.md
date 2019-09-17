@@ -5,6 +5,8 @@
 
 A Java client for Sauce Labs’s REST API. This supercedes the old [sauce-rest-api].
 
+WARNING: must export GPG_TTY=$(tty) for gpg error when doing mvn install.
+
 Using this client you can update Job info, including pass/fail status and other information supported.  Only the Sauce Labs Virtual Device Cloud is supported.  For Real Devices, please see [the docs](https://api.testobject.com/).
 
 If a function you're after isn't supported, we suggest either shelling out and using the curl version, _or_ sending a pull request!  [Contribution Details Here](https://github.com/saucelabs/saucerest-java/blob/master/contributing.md)

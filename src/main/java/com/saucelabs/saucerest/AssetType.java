@@ -14,7 +14,8 @@ public enum AssetType {
 	SELENIUM ("selenium-server","log"),
 	LOG ("log","json"),
 	VIDEO ("video","mp4"),
-	CONSOLE ("console","json");
+	CONSOLE ("console","json"),
+	FINAL_SCREENSHOT ("final_screenshot","png");
 	
 	private final String name;
 	private final String extension;
