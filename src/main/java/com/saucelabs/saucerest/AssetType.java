@@ -4,6 +4,8 @@
 package com.saucelabs.saucerest;
 
 /**
+ * Enumeration of all the types of assets that can be downloaded
+ * from Saucelabs
  * @author tcerven
  *
  */
